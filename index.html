@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Memory Leak Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .demo-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .demo-section h3 {
+            color: #FFD700;
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin: 8px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .danger {
+            background: linear-gradient(45deg, #FF4757, #FF3742) !important;
+        }
+        
+        .safe {
+            background: linear-gradient(45deg, #2ED573, #20BF55) !important;
+        }
+        
+        .memory-stats {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #FFC107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .leak-counter {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #FF6B6B;
+        }
+        
+        .description {
+            opacity: 0.9;
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 JavaScript Memory Leak Demo</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Warning:</strong> This demo intentionally creates memory leaks! 
+            Monitor your browser's memory usage and refresh the page to reset.
+        </div>
+        
+        <div class="memory-stats" id="memoryStats">
+            <div><strong>Memory Usage:</strong></div>
+            <div id="memoryInfo">Calculating...</div>
+            <div class="leak-counter">Active Leaks: <span id="leakCount">0</span></div>
+        </div>
+        
+        <!-- Event Listener Leak -->
+        <div class="demo-section">
+            <h3>🎯 1. Event Listener Memory Leak</h3>
+            <div class="description">
+                Creates DOM elements with event listeners but never removes them.
+                The elements pile up in memory even after being "removed" from DOM.
+            </div>
+            <button onclick="createEventListenerLeak()" class="danger">Create Event Listener Leak</button>
+            <button onclick="fixEventListenerLeak()" class="safe">Fix Leak (Proper Cleanup)</button>
+            <div id="eventListenerStatus"></div>
+        </div>
+        
+        <!-- Timer Leak -->
+        <div class="demo-section">
+            <h3>⏰2. Timer/Interval Memory Leak</h3>
+            <div class="description">
+                Starts timers and intervals but never clears them.
+                These continue running forever, preventing garbage collection.
+            </div>
+            <button onclick="createTimerLeak()" class="danger">Create Timer Leak</button>
+            <button onclick="clearAllTimers()" class="safe">Clear All Timers</button>
+            <div id="timerStatus">Active Timers: <span id="timerCount">0</span></div>
+        </div>
+        
+        <!-- Global Variable Leak -->
+        <div class="demo-section">
+            <h3>🌍 3. Global Variable Memory Leak</h3>
+            <div class="description">
+                Creates large objects in global scope that never get cleaned up.
+                Global variables persist for the entire page lifetime.
+            </div>
+            <button onclick="createGlobalLeak()" class="danger">Create Global Variable Leak</button>
+            <button onclick="clearGlobalLeaks()" class="safe">Clear Global Variables</button>
+            <div id="globalStatus">Global Objects: <span id="globalCount">0</span></div>
+        </div>
+        
+        <!-- Closure Leak -->
+        <div class="demo-section">
+            <h3>🔒 4. Closure Memory Leak</h3>
+            <div class="description">
+                Creates closures that hold references to large data structures.
+                The closure keeps the data alive even when it's no longer needed.
+            </div>
+            <button onclick="createClosureLeak()" class="danger">Create Closure Leak</button>
+            <button onclick="clearClosureLeaks()" class="safe">Clear Closures</button>
+            <div id="closureStatus">Active Closures: <span id="closureCount">0</span></div>
+        </div>
+        
+        <!-- DOM Reference Leak -->
+        <div class="demo-section">
+            <h3>📄 5. DOM Reference Memory Leak</h3>
+            <div class="description">
+                Keeps references to removed DOM elements in JavaScript variables.
+                The elements can't be garbage collected while references exist.
+            </div>
+            <button onclick="createDOMRefLeak()" class="danger">Create DOM Reference Leak</button>
+            <button onclick="clearDOMRefs()" class="safe">Clear DOM References</button>
+            <div id="domRefStatus">Cached DOM Refs: <span id="domRefCount">0</span></div>
+        </div>
+        
+        <div class="demo-section">
+            <h3>🔧 Memory Management Tools</h3>
+            <button onclick="forceGarbageCollection()" class="safe">Force Garbage Collection (if available)</button>
+            <button onclick="generateMemoryPressure()" class="danger">Generate Memory Pressure</button>
+            <button onclick="location.reload()" class="safe">Reset Demo (Refresh Page)</button>
+        </div>
+        
+        <div class="demo-section">
+            <h3>📊 How to Use Chrome DevTools:</h3>
+            <div class="description">
+                <ol>
+                    <li><strong>Open DevTools:</strong> F12 or Ctrl+Shift+I (Cmd+Opt+I on Mac)</li>
+                    <li><strong>Go to Memory tab:</strong> Click on "Memory" tab</li>
+                    <li><strong>Take Heap Snapshot:</strong> Select "Heap snapshot" and click "Take snapshot"</li>
+                    <li><strong>Create some leaks:</strong> Click the red "Create Leak" buttons above</li>
+                    <li><strong>Take another snapshot:</strong> Compare the memory usage</li>
+                    <li><strong>Analyze:</strong> Look for increasing object counts and memory usage</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <script src="memory-leaks.js"></script>
+</body>
+</html>
